@@ -1,0 +1,28 @@
+body
+{
+	background: #b8cded;
+}
+.navbar
+{
+	background: #184182;
+	border-radius: 1em;
+	color: #ffffff;
+	display: table;
+	font-family: sans-serif;
+	height: 10%;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+	width: 90%;
+}
+.centered
+{
+	display: table-cell;
+	vertical-align: middle;
+}
+#playerbox
+{
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+}
