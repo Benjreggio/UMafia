@@ -1,17 +1,21 @@
 body
 {
-	background: #b8cded;
+	background-image: url("https://www.xmple.com/wallpaper/brown-gradient-yellow-linear-1600x900-c2-ffffe0-800000-a-150-f-14.svg");
+	background-size: cover;
 }
 .navbar
 {
-	background: #184182;
+	background: #881c1c;
+	background-size: cover;
 	border-radius: 1em;
 	color: #ffffff;
 	display: table;
 	font-family: sans-serif;
 	height: 10%;
+	margin-bottom: 1em;
 	margin-left: auto;
 	margin-right: auto;
+	margin-top: 1em;
 	text-align: center;
 	width: 90%;
 }
@@ -20,9 +24,63 @@ body
 	display: table-cell;
 	vertical-align: middle;
 }
-#playerbox
+.container
 {
 	display: block;
+	margin: 1em;
 	margin-right: auto;
 	margin-left: auto;
+	width: 23em;
+}
+.maindiv
+{
+	border-right: 2px solid #000000;
+	display: inline-block;
+	height : 100%;
+	width: 80%;
+}
+.subdiv
+{
+	border-right: 0px;
+	vertical-align: top;
+	width: 18%;
+}
+#playerbox
+{
+	display: inline-block;
+	margin-right: auto;
+	margin-left: auto;
+	width: 15em;
+}
+#bg
+{
+	display: background;
+}
+#choices
+{
+	width: 30em;
+	margin-left: auto;
+	margin-right: auto;
+}
+#choices input
+{
+	background: #881c1c;
+	border: 2px solid #000000;
+	border-radius: 4em;
+	height: 3em;
+	margin-bottom: 2em;
+	width: 30em;
+}
+#infobox
+{
+
+	display: inline-block;
+	padding: 1em;
+}
+#userSelect
+{
+	display: inline-block;
+	margin-left: 1em;
+	font-size: 1.5em;
+	size: 2em;
 }
