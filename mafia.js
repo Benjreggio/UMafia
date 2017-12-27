@@ -2,18 +2,27 @@ var cl = document.getElementById('choices');
 var daynum = 0;
 var display = document.getElementById('display');
 var decisions = [];
+var detect = "none";
+var firstMenu = document.getElementById('firstMenu');
+var host = false;
 var idinc = 0;
 var info = document.getElementById('info');
-var inputs = document.getElementsByTagName("form")[0];
 var main = document.getElementById('main');
+var name;
+var game = false;
+var gameCode;
 var pL = [];
 var playerbox = document.getElementById("playerbox");
-var rolesList = ["Godfather","Detective","Doctor","Vigilante","Townsperson"];
+var socket = io.connect();
+var rolesList = ["Godfather","Detective","Doctor","Vigilante"];
+var secondMenu = document.getElementById('joinMenu');
 var tod = true;
 var ul = document.getElementById('charlist');
 var user = 0;
+var userInfo = document.getElementById('userInfo');
 var userSelect = document.getElementById('userSelect');
-main.style.display = "none";
+var vigshot = false;
+var vigcon = 0;
 function assignRoles()
 {
 	var n = pL.length;
@@ -26,9 +35,9 @@ function assignRoles()
 	if(pL.length>12)
 		m = 2;
 	for(var ma = 0; ma<m; ma++)
-		rolesList = ["Mafioso"].concat(rolesList);
+		rolesList.push("Mafioso");
 	while(rolesList.length<pL.length)
-		rolesList = rolesList.concat(["townsperson"]);
+		rolesList.push("Townsperson");
 	for(var i = 0; i<pL.length; i++)
 	{
 		pL[list[i]][1] = rolesList[i];
@@ -38,17 +47,14 @@ function begin()
 {
 	if(pL.length>3)
 	{
-		while(ul.firstChild)
-		{
-			ul.removeChild(ul.firstChild);
-		}
+		var pregame = document.getElementById('pregame');
+		pregame.style.display = "none";
 		main.style.display = 'block';
-		assignRoles();
+		game = true;
 		makeButtons();
 		initializeUsers();
 		updateInfo();
 		decisions = [];
-		inputs.style.display = "none";
 		makeNight();
 	}
 	else
@@ -78,50 +84,23 @@ function checkTown()
 	var maf = 0;
 	for(var i = 0; i<pL.length; i++)
 	{
-		if(isMafia(pL[i]))
+		if(isMafia(pL[i][1]))
 			maf++;
 		else
 			town++;
 	}
 	if(maf>town)
 		gameOver("Mafia","s");
+	return maf>town;
 }
-function createChar()
+function createChar(text)
 {
 	var li = document.createElement("li");
-	var text = document.getElementById("playerbox").value;
 	var work = true;
-	if(text == "unassigned")
-	{
-		work = false;
-	}
-	for(var i = 0; i<pL.length; i++)
-	{
-		if(text ==pL[i][0])
-			work = false;
-	}
-	if(work)
-	{
-		if(text == "")
-			alert('No name entered');
-		else
-		{
-			if(testFor())
-			{
-				alert('Please do not put commas in your name');
-			}
-			else
-			{
-				li.appendChild(document.createTextNode(text));
-				ul.appendChild(li);
-				playerbox.value = '';
-				makePlayer(text,idinc);
-				idinc++;
-			}
-		}
-	}
-	else
-		alert("This name is already in use");
+	li.appendChild(document.createTextNode(text));
+	ul.appendChild(li);
+	makePlayer(text,idinc);
+	idinc++;
 }
 function day()
 {
@@ -138,11 +117,11 @@ function day()
 		}
 	}
 }
-function findGF()
+function find(role)
 {
 	for(var i = 0; i<pL.length; i++)
 	{
-		if(pL[i][1] == 'Godfather')
+		if(pL[i][1] == role)
 		{
 			return i;
 			break;
@@ -150,26 +129,61 @@ function findGF()
 	}
 	return -1;
 }
+function findMyUser()
+{
+	for(var i = 0; i<pL.length;i++)
+	{
+		if(pL[i][0]==name)
+			return i;
+	}
+	return -1;
+}
 function gameOver(team,plural)
 {
 	cl.style.display = 'none';
 	show(""+ team + " Win" + plural + "!");
+	game = false;
 }
-function handle(e)
+function getDetectResults()
 {
-	if(e.keyCode ==13)
+	var n = find('Detective')
+	if(n>-1)
 	{
-		e.preventDefault();
-		createChar();
+		if(isMafia(pL[decisions[find("Detective")]][1]))
+			detect = "positive";
+		else
+			detect = "negative";
 	}
-	return false;
 }
-function override()
+function hostGameMenu()
 {
-	if(tod)
-		makeNight();
+	name = playerbox.value;
+	if(!(name == ''||testFor(name)))
+	{
+		host = true;
+		var firstMenu = document.getElementById('firstMenu');
+		firstMenu.style.display = "none";
+		var hostMenu = document.getElementById('hostMenu');
+		hostMenu.style.display = 'block';
+		var gc = document.getElementById('gameCode');
+		gamecode = newGameCode();
+		gc.innerHTML = 'GameCode: ' + gamecode;
+		socket.emit('createGame',[gamecode,name])
+		createChar(name);
+	}
 	else
-		makeDay();
+		alert('Invalid name');
+}
+function hostStart()
+{
+	if(pL.length>3)
+	{
+		assignRoles();
+		socket.emit('host start',{game: gamecode,players: pL})
+		userInfo.innerHTML = "Host: " + name + "<br/>Gamecode: " + gamecode;
+	}
+	else
+		alert('not enough players');
 }
 function initializeUsers()
 {
@@ -190,9 +204,34 @@ function isMafia(role)
 		return true;
 	return false;
 }
+function joinGame()
+{
+	var codeBox = document.getElementById('codeBox');
+	gamecode = codeBox.value;
+	if(gamecode<10000&&gamecode>-1)
+	{
+		socket.emit('join attempt',{player: name, gc : gamecode});
+	}
+}
+function joinGameMenu()
+{
+	name = playerbox.value;
+	if(!(name == ''||testFor(name)))
+	{
+		firstMenu.style.display = "none";
+		secondMenu.style.display = "block";
+	}
+	else
+		alert('Invalid name')
+}
 function kill(n)
 {
-	alert(pL[n][0] + " is dead");
+	console.log(pL[n][0] + " is dead");
+	if(n == user)
+	{
+		show("You Are Dead");
+		main.style.display = 'none';
+	}
 	var role = pL[n][1];
 	pLremove(n);
 	if(!isMafia(role))
@@ -201,6 +240,8 @@ function kill(n)
 		checkMafia(role);
 	cl.removeChild(cl.childNodes[n]);
 	userSelect.removeChild(userSelect.childNodes[n]);
+	userChoose(findMyUser());
+	userSelect.selectedIndex = findMyUser();
 	updateButtons();
 }
 function makeButtons()
@@ -237,6 +278,15 @@ function makeNight()
 	else
 		alert('error: already nighttime');
 }
+function makePlayer(text,id)
+{
+	pL = pL.concat([[text+"","unassigned"]]);
+}
+function newGameCode()
+{
+	var x = Math.random()*10000;
+	return parseInt(x);
+}
 function night(n)
 {
 	var work = true;
@@ -248,17 +298,60 @@ function night(n)
 	if(work)
 	{
 		makeDay();
-		kill(decisions[findGF()]);
+		getDetectResults();
+		var targets = [];
+		var vig = find('Vigilante');
+		var doc = find('Doctor');
+		var gf = find('Godfather');
+		if(vig > -1 && vigcon == 2)
+		{
+			targets.push(vig);
+		}
+		if(vig > -1 && vigcon == 0 && vigshot == true)
+		{
+			if(decisions[doc]==decisions[vig])
+			{
+				console.log('Doctor blocks Vigilante');
+				vigcon = 1;
+			}
+			else
+			{
+				targets.push(decisions[vig]);
+				console.log('Vigilante ' + pL[vig][0] + ' attacks ' + pL[decisions[vig]][0]);
+				if(isMafia(pL[decisions[vig]][1]))
+					vigcon = 1;
+				else
+					vigcon = 2;
+			}
+		}
+		console.log('gf: ' + decisions[gf] + ' doc: ' + decisions[doc]);
+		if(!(decisions[doc] == decisions[gf]))
+		{
+			targets.push(decisions[gf]);
+			console.log('Godfather ' + pL[gf][0] + ' attacks ' + pL[decisions[gf]][0]);
+		}
+		else
+		{
+			console.log('Doctor blocks Godfather');
+		}
+		targets = removeDupes(targets);
+		targets.reverse();
+		for(var i = 0; i<targets.length; i++)
+			kill(targets[i]);
 		decisions = [];
+		updateInfo();
 	}
 }
 function over()
 {
 	return true;
 }
-function makePlayer(text,id)
+function override()
 {
-	pL = pL.concat([[text+"","unassigned"]]);
+	if(tod)
+		makeNight();
+	else
+		makeDay();
 }
 function pLremove(n)
 {
@@ -267,39 +360,48 @@ function pLremove(n)
 	{
 		if(i != n)
 		{
-			list = list.concat([pL[i]]);
+			list.push(pL[i]);
 		}
 	}
 	pL = list;
 }
 function pushed(n)
 {
-	alert(user + ' selected ' + n);
-	decisions[user] = n;
-	if(tod)
-		day();
-	else
-		night();
+	socket.emit('decision input',{decider: user, decision: n})
 }
 function randList(n)
 {
 	var list = [];
-	for(var i = 0; i<n; i++)
+	for(var i = 1; i<=n; i++)
 	{
 		var newlist = [];
-		var m = (Math.random()*i);
+		var m = parseInt(Math.random()*i);
 		for(var j = 0; j<m; j++)
 		{
 			newlist[j] = list[j];
 		}
-		newlist[parseInt(m)] = i;
-		for(var j = parseInt(m); j<i; j++)
+		newlist[parseInt(m)] = i-1;
+		for(var j = parseInt(m); j<i-1; j++)
 		{
 			newlist[j+1]=list[j]; 
 		}
 		list = newlist;
 	}
 	return list;
+}
+function removeDupes(list)
+{
+	newList = list;
+	newList.sort(function(a,b){return a-b});
+	var i = 1;
+	while(i<newList.length)
+	{
+		if(newList[i] == newList[i-1])
+			newList.splice(i,1);
+		else
+			i++;
+	}
+	return newList;
 }
 function show(text)
 {
@@ -318,21 +420,101 @@ function updateButtons()
 {
 	buttons = cl.childNodes;
 	for(var i = 0; i<buttons.length; i++)
+	{
 		buttons[i].id = i;
+		if(decisions[user] == i)
+		{
+			buttons[i].style.backgroundColor = "#ffffff"
+			buttons[i].style.color = "#881c1c"
+		}
+		else
+		{
+			buttons[i].style.backgroundColor = "#881c1c";
+			buttons[i].style.color = "#ffffff";
+		}
+	}
 }
 function updateInfo()
 {
-	info.innerHTML = "Your Class: " + pL[user][1];
+	if(findMyUser!=-1)
+	{
+		info.innerHTML = "Your Class: " + pL[user][1];
+		if(user == find("Detective"))
+		{
+			info.innerHTML = "Your Class: Detective <br> Results: " + detect;
+		}
+		if(user == find("Vigilante") && vigcon == 0 && daynum>1)
+		{
+			info.innerHTML = info.innerHTML + "<br> <input type = 'checkbox' id = 'vc' onclick = 'vigInput()'> Shoot?";
+			document.getElementById('vc').checked = vigshot;
+		}
+		if(user == find("Godfather"))
+		{
+			var has = false;
+			for(var i = 0; i < pL.length; i++)
+			{
+				if((pL[i][1])=='Mafioso')
+				{
+					if(!has)
+						info.innerHTML = info.innerHTML + "<br> Suggestions";
+					has = true;
+					if(decisions[i] >-1)
+						info.innerHTML = info.innerHTML + "<br>" + pL[i][0] + ": " + pL[decisions[i]][0];
+				}
+			}
+		}
+	}
 }
 function userChoose(n)
 {
 	user = n;
 	updateInfo();
+	updateButtons();
+}
+function vigInput()
+{
+	socket.emit('vig input',0)
 }
 function zeroList()
 {
 	list = [];
 	for(var i = 0; i<pL.length; i++)
-		list = list.concat([0]);
+		list.push(0);
 	return list;
 }
+socket.on('begin',function(data)
+{
+	pL = data;
+	user = findMyUser();
+	begin();
+})
+socket.on('decision output',function(data)
+{
+	console.log(data.decider + ' selected ' + data.decision);
+	decisions[data.decider] = data.decision;
+	if(tod)
+		day();
+	else
+		night();
+	updateButtons();
+})
+socket.on('join confirmed',function(data)
+{
+	secondMenu.style.display = 'none';
+	userInfo.innerHTML = 'Player: ' + data.name + '<br/>Host: ' +data.host;
+})
+socket.on('join confirmed host',function(data)
+{
+	createChar(data.name);
+})
+socket.on('name error',function(data)
+{
+	playerbox.value = '';
+	firstMenu.style.display = "block";
+	secondMenu.style.display = "none";
+	alert('This name is already in use');
+})
+socket.on('vig output',function(data)
+{
+	vigshot = !vigshot;
+})
