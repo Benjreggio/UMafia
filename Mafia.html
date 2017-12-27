@@ -1,5 +1,3 @@
-<!doctype html>
-
 <html lang = "en">
 
 	<head>
@@ -10,7 +8,7 @@
 
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
 
-		<link href = "mafia.css" rel = "stylesheet"/>
+		<link href = "mafiacss.css" rel = "stylesheet"/>
 
 	</head>
 
@@ -22,19 +20,50 @@
 
 		</div>
 
-		<form action = "#" class = container>
+		<div id = "pregame">
 
-			<input type = "text" id = "playerbox" onkeypress = "handle(event)"
-					value = ""/>
-			<input type = "button" class = 'btn-default' value = "Create Character" onclick = "createChar();" />
-			<input type = "button" value = "Start" onclick = "begin();"/>
-		</form>
+			<div id = "firstMenu">
+				<form action = "#" class = "container">
 
-		<ul id = "charlist"></ul>
+					<label>Enter Name</label>
+					<br/>
+					<input type = "text" id = "playerbox" value = ""/>
+					<input type = "button" class = 'btn-default' value = "Create Game" onclick = "hostGameMenu();" />
+					<input type = "button" value = "Join Game" onclick = "joinGameMenu();"/>
+
+				</form>
+			</div>
+
+			<div id = "hostMenu" class = "container initClosed">
+
+				<h2 id = 'gameCode'> Game Code: </h2>
+
+				<h3> Players: </h3>
+
+				<ul id = "charlist"></ul>
+
+				<form action = '#'>
+					<input type = "button" class = "btn btn-primary" value = "Start Game" onclick = "hostStart();"/>
+				</form>
+
+			</div>
+
+			<div id = 'joinMenu' class = "container initClosed">
+				<form action = '#'>
+					<label>Enter Game Code</label>
+					<br/>
+					<input type = "text" id = "codeBox" value = ""/>
+					<input type = "button" class = "btn btn-primary" value = "Join" onclick = "joinGame();"/>
+				</form>
+			</div>
+
+		</div>
+
+		<h4 id = userInfo></h4>
 
 		<div id = "main">
 
-			<div class = 'maindiv'>
+			<div class = 'maindiv col-md-8'>
 
 				<select onchange = 'userChoose(this.selectedIndex)' id = 'userSelect'>
 				</select>
@@ -44,7 +73,7 @@
 
 			</div>
 
-			<div class = 'maindiv subdiv'>
+			<div class = 'maindiv subdiv col-md-4'>
 
 					<button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#info">Show/Hide</button>
 
@@ -60,7 +89,8 @@
 	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+	<script src = /socket.io/socket.io.js></script>
 
-	<script src = "mafia.js"></script>
+	<script src = "mafiajs.js"></script>
 
 </html>
